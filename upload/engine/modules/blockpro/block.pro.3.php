@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.1.2.1 (10.02.2013)
+Версия: 3.2.0.0 (13.02.2013)
 =============================================================================
 */ 
 
@@ -218,14 +218,16 @@ if(!class_exists('BlockPro')) {
 				$bodyToRelated = $db->safesql(strip_tags(stripslashes($relatedBody['title'] . " " . $bodyToRelated)));
 				
 				$wheres[] = 'MATCH ('.$relatedRows.') AGAINST ("'.$bodyToRelated.'") AND id !='.$relatedId;
-			}		
+
+			}
 
 
 			// Разбираемся с временными рамками отбора новостей, если кол-во дней указано - ограничиваем выборку, если нет - выводим без ограничения даты
 			if(intval($this->config['day'])) $wheres[] =  'date >= "'.$tooday.'" - INTERVAL ' .  intval($this->config['day']) . ' DAY';
 
 			// Условие для отображения только тех постов, дата публикации которых уже наступила
-			$wheres[] = 'date < "'.$tooday.'"';
+			
+			$wheres[] = "date < '{$tooday}'";
 			
 			// Складываем условия
 			$where = implode(' AND ', $wheres);
@@ -236,6 +238,10 @@ if(!class_exists('BlockPro')) {
 			// Сортировка новостей 
 			switch ($this->config['sort']) 
 			{
+				case 'none':					// Не сортировать (можно использовать для вывода похожих новостей, аналогично стандарту DLE)
+					$sort = false; 			
+					break;
+
 				case 'date':					// Дата
 					$sort = 'date '; 			
 					break;
@@ -534,17 +540,10 @@ if(!class_exists('BlockPro')) {
 		{	
 			// Задаём папку для картинок
 			$dir_prefix = $this->config['imgSize'].'/'.date("Y-m", $date).'/';
+			
 
 			$dir = ROOT_DIR . '/uploads/blockpro/'.$dir_prefix;
 
-			// Создаём и назначаем права, если нет таковых
-			if(!is_dir($dir)){						
-				@mkdir($dir, 0755, true);
-				@chmod($dir, 0755);
-			} 
-			if(!chmod($dir, 0755)) {
-				@chmod($dir, 0755);
-			}
 			// Проверяем откуда задан вывод картинки
 			$xf_img = true;
 			if ($this->config['image'] == 'short_story' || $this->config['image'] == 'full_story') {
@@ -553,10 +552,18 @@ if(!class_exists('BlockPro')) {
 
 			if(preg_match_all('/<img(?:\\s[^<>]*?)?\\bsrc\\s*=\\s*(?|"([^"]*)"|\'([^\']*)\'|([^<>\'"\\s]*))[^<>]*>/i', $post, $m) || $xf_img) {
 				
+				// Создаём и назначаем права, если нет таковых
+				if(!is_dir($dir)){						
+					@mkdir($dir, 0755, true);
+					@chmod($dir, 0755);
+				} 
+				if(!chmod($dir, 0755)) {
+					@chmod($dir, 0755);
+				}
+
 				// Адрес первой картинки в новости
 				$url = ($xf_img) ? $post : $m[1][0];	
-
-
+				
 				//Выдёргиваем оригинал, на случай если уменьшить надо до размеров больше, чем thumb в новости									
 				$imgOriginal = str_ireplace('/thumbs', '', $url); 	
 
@@ -573,7 +580,7 @@ if(!class_exists('BlockPro')) {
 						$imgResized = ROOT_DIR . $urlShort;					
 						
 						// Определяем новое имя файла
-						$fileName = $this->config['imgSize'].'_'.strtolower(basename($imgResized)); 		
+						$fileName = $this->config['imgSize'].'_'.$this->config['resizeType'].'_'.strtolower(basename($imgResized)); 		
 
 						// Если картинки нет - создаём её
 						if(!file_exists($dir.$fileName)) 
@@ -581,13 +588,17 @@ if(!class_exists('BlockPro')) {
 							// Разделяем высоту и ширину
 							$imgSize = explode('x', $this->config['imgSize']); 	
 
-							// Подрубаем нормальный класс для картинок(надо его в деле проверить ещё :-D)
+							// Если указана только одна величина - присваиваем второй первую, будет квадрат для exact, auto и crop, иначе класс ресайза жестоко тупит, ожидая вторую переменную.
+							if(count($imgSize) == '1') 
+								$imgSize[1] = $imgSize[0];
+
+							// Подрубаем НОРМАЛЬНЫЙ класс для картинок
 							require_once ENGINE_DIR.'/modules/blockpro/resize_class.php'; 				
 							$resizeImg = new resize($imgResized);
 							$resizeImg -> resizeImage(						//создание уменьшенной копии
-								$imgSize[0], 								//Ширина
-								$imgSize[1], 								//Высота
-								$this->config['resizeType']				//Метод уменьшения (exact, portrait, landscape, auto, crop)
+								$imgSize[0],
+								$imgSize[1],
+								$this->config['resizeType']					//Метод уменьшения (exact, portrait, landscape, auto, crop)
 								); 
 							$resizeImg -> saveImage($dir.$fileName); 		//Сохраняем картинку в папку /uploads/blockpro/[размер_уменьшенной_копии]/[месяц_создания новости]
 						}					 									
