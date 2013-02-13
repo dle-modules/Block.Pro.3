@@ -1,4 +1,4 @@
-<?
+<?php
 /*
 =============================================================================
 BlockPro 3 - Модуль для вывода блоков с новостями на страницах сайта DLE (тестировался на 9.7 и 9.8)
@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.2.0.0 (13.02.2013)
+Версия: 3.2.1.0 (13.02.2013)
 =============================================================================
 */ 
 
@@ -171,7 +171,7 @@ if(!class_exists('BlockPro')) {
 			if ($this->config['postId'] == 'this') $this->config['postId'] = $_REQUEST["newsid"];
 			if ($this->config['notPostId'] == 'this') $this->config['notPostId'] = $_REQUEST["newsid"];
 
-			if (($this->config['postId'] || $this->config['notPostId']) && $this->config['related'] != '') 
+			if (($this->config['postId'] || $this->config['notPostId']) && $this->config['related'] == '') 
 			{
 				$ignorePosts = ($this->config['notPostId']) ? 'NOT ' : '';
 				$postsArr = ($this->config['notPostId']) ? $this->config['notPostId'] : $this->config['postId'];					
@@ -398,6 +398,7 @@ if(!class_exists('BlockPro')) {
 					$xfieldsdata = xfieldsdataload($newsItem['xfields']);
 
 					$newsTitle = htmlspecialchars(strip_tags(stripslashes($newsItem['title'])));
+					$newsItem['short_story'] = stripcslashes($newsItem['short_story']);
 
 					$output .= $this->applyTemplate($this->config['template'],
 						array(
