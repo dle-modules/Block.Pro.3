@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.2.1.0 (13.02.2013)
+Версия: 3.2.2.0 (14.02.2013)
 =============================================================================
 */ 
 
@@ -316,6 +316,9 @@ if(!class_exists('BlockPro')) {
 				$xfields = xfieldsload();
 
 				$newsItem['date'] = strtotime($newsItem['date']);
+				$newsItem['short_story'] = stripslashes($newsItem['short_story']);
+				$newsItem['full_story'] = stripslashes($newsItem['full_story']);
+
 
 				// Формируем ссылки на категории и иконки категорий
 				$my_cat = array();
@@ -398,7 +401,6 @@ if(!class_exists('BlockPro')) {
 					$xfieldsdata = xfieldsdataload($newsItem['xfields']);
 
 					$newsTitle = htmlspecialchars(strip_tags(stripslashes($newsItem['title'])));
-					$newsItem['short_story'] = stripcslashes($newsItem['short_story']);
 
 					$output .= $this->applyTemplate($this->config['template'],
 						array(
@@ -539,29 +541,19 @@ if(!class_exists('BlockPro')) {
 
 		public function getImage($post, $date)
 		{	
-			// Задаём папку для картинок
-			$dir_prefix = $this->config['imgSize'].'/'.date("Y-m", $date).'/';
-			
-
-			$dir = ROOT_DIR . '/uploads/blockpro/'.$dir_prefix;
-
 			// Проверяем откуда задан вывод картинки
 			$xf_img = true;
 			if ($this->config['image'] == 'short_story' || $this->config['image'] == 'full_story') {
 				$xf_img = false;
 			} 
 
+			// Задаём папку для картинок
+			$dir_prefix = $this->config['imgSize'].'/'.date("Y-m", $date).'/';
+
+			$dir = ROOT_DIR . '/uploads/blockpro/'.$dir_prefix;
+			
 			if(preg_match_all('/<img(?:\\s[^<>]*?)?\\bsrc\\s*=\\s*(?|"([^"]*)"|\'([^\']*)\'|([^<>\'"\\s]*))[^<>]*>/i', $post, $m) || $xf_img) {
 				
-				// Создаём и назначаем права, если нет таковых
-				if(!is_dir($dir)){						
-					@mkdir($dir, 0755, true);
-					@chmod($dir, 0755);
-				} 
-				if(!chmod($dir, 0755)) {
-					@chmod($dir, 0755);
-				}
-
 				// Адрес первой картинки в новости
 				$url = ($xf_img) ? $post : $m[1][0];	
 				
@@ -574,9 +566,18 @@ if(!class_exists('BlockPro')) {
 				// Если http нет - работаем с картинкой, если есть http или смайлик/спойлер - пропускаем, такая картинка нам не пойдёт, вставим заглушку
 				if (stripos($urlShort, 'http') === false && stripos($urlShort, 'dleimages') === false && stripos($urlShort, 'engine/data/emoticons') === false && $post != '') 
 				{
-					// Если Есть параметр imgSize - включаем обрезку картинок
-					if ($this->config['imgSize']) 
+					// Если Есть параметр imgSize и картинка лежит у нас на сервере - включаем обрезку картинок
+					if ($this->config['imgSize'] && $urlShort) 
 					{
+						// Создаём и назначаем права, если нет таковых
+						if(!is_dir($dir)){						
+							@mkdir($dir, 0755, true);
+							@chmod($dir, 0755);
+						} 
+						if(!chmod($dir, 0755)) {
+							@chmod($dir, 0755);
+						}
+
 						// Подставляем корневю дирректорию, чтоб ресайзер понял что ему дают.
 						$imgResized = ROOT_DIR . $urlShort;					
 						
@@ -601,7 +602,7 @@ if(!class_exists('BlockPro')) {
 								$imgSize[1],
 								$this->config['resizeType']					//Метод уменьшения (exact, portrait, landscape, auto, crop)
 								); 
-							$resizeImg -> saveImage($dir.$fileName); 		//Сохраняем картинку в папку /uploads/blockpro/[размер_уменьшенной_копии]/[месяц_создания новости]
+							$resizeImg -> saveImage($dir.$fileName, $this->config['imgQuality']); 		//Сохраняем картинку в папку /uploads/blockpro/[размер_уменьшенной_копии]/[месяц_создания новости]
 						}					 									
 						
 						$imgResized = $this->dle_config['http_home_url'].'uploads/blockpro/'.$dir_prefix.$fileName;	
@@ -816,6 +817,7 @@ if(!class_exists('BlockPro')) {
 		'noimageFull'	=> !empty($noimageFull)?$noimageFull:'noimage-full.png',	// Картинка-заглушка большая
 		'imgSize'		=> !empty($imgSize)?$imgSize:false,						    // Размер уменьшенной копии картинки
 		'resizeType'	=> !empty($resizeType)?$resizeType:'auto',				    // Опция уменьшения копии картинки (exact, portrait, landscape, auto, crop)
+		'imgQuality'	=> !empty($imgQuality)?$imgQuality:'80',				    // Качество создаваемой уменьшенной копии (0-100)
 		
 		
 		'textLimit'	    => !empty($textLimit)?$textLimit:false,					    // Ограничение количества символов
