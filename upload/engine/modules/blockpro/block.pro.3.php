@@ -27,8 +27,8 @@ if( ! defined( 'DATALIFEENGINE' ) ) {
 }
 
 if($showstat) $start = microtime(true);
-if(!class_exists('BlockPro')) {
-	class BlockPro {
+if(!class_exists('DleBlockPro')) {
+	class DleBlockPro {
 		protected static $_instance;
 		// Конструктор конфига модуля
 		private function __construct()
@@ -77,14 +77,14 @@ if(!class_exists('BlockPro')) {
 		}
 
 		/*
-		 * Главный метод класса BlockPro
+		 * Главный метод класса DleBlockPro
 		 */
-		public function runBlockPro($BlockProConfig)
+		public function runDleBlockPro($DleBlockProConfig)
 		{
 		global $db, $cat_info, $lang;
 
 			$this->get_category();
-			$this->set_config($BlockProConfig);
+			$this->set_config($DleBlockProConfig);
 
 			// Защита от фашистов )))) (НУЖНА ЛИ? )
 			$this->config['postId']     = @$db->safesql(strip_tags(str_replace('/', '', $this->config['postId'])));
@@ -779,11 +779,11 @@ if(!class_exists('BlockPro')) {
 			echo $output;
 		}
 
-	}//конец класса BlockPro
+	}//конец класса DleBlockPro
 } 
 
 	// Цепляем конфиг модуля
-	$BlockProConfig = array(
+	$DleBlockProConfig = array(
 		'template'		=> !empty($template)?$template:'blockpro/blockpro', 		// Название шаблона (без расширения)
 		'prefix'		=> !empty($BpPrefix)?$BpPrefix:'news_', 					// Дефолтный префикс кеша
 		'nocache'		=> !empty($nocache)?$nocache:false,							// Не использовать кеш
@@ -832,9 +832,9 @@ if(!class_exists('BlockPro')) {
 	);
 	
 	// Создаем экземпляр класса для перелинковки и запускаем его главный метод
-	//$BlockPro = new BlockPro($BlockProConfig); // В сингелтоне такое неьзя делать
-	$BlockPro = BlockPro::getInstance();
-	$BlockPro->runBlockPro($BlockProConfig);
+	//$DleBlockPro = new DleBlockPro($DleBlockProConfig); // В сингелтоне такое неьзя делать
+	$DleBlockPro = DleBlockPro::getInstance();
+	$DleBlockPro->runDleBlockPro($DleBlockProConfig);
 
 
 	//Показываем статистику генерации блока, если требуется
