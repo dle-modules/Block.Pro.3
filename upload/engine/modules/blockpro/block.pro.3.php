@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.2.2.0 (14.02.2013)
+Версия: 3.2.2.1 (07.03.2013)
 =============================================================================
 */ 
 
@@ -400,7 +400,8 @@ if(!class_exists('BlockPro')) {
 
 					$xfieldsdata = xfieldsdataload($newsItem['xfields']);
 
-					$newsTitle = htmlspecialchars(strip_tags(stripslashes($newsItem['title'])));
+					$newsTitle = htmlspecialchars(strip_tags(stripslashes($newsItem['title'])), ENT_QUOTES, $this->dle_config['charset']);
+
 
 					$output .= $this->applyTemplate($this->config['template'],
 						array(
