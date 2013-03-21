@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.2.2.1 (07.03.2013)
+Версия: 3.2.2.2 (21.03.2013)
 =============================================================================
 */ 
 
@@ -200,9 +200,9 @@ if(!class_exists('BlockPro')) {
 
 			// Если включен режим вывода похожих новостей:
 			if ($this->config['related'] != '') 
-			{
+			{			
 				if ($this->config['related'] == 'this' && $_REQUEST["newsid"] =='') {
-					echo '<span style="color: red;">Переменная related=this работает только в полной новости.</span>';
+					echo '<span style="color: red;">Переменная related=this работает только в полной новости и не работает с ЧПУ 3 типа.</span>';
 					return;
 				}
 				$relatedId = ($this->config['related'] == 'this') ? $_REQUEST["newsid"] : $this->config['related'];
@@ -407,7 +407,7 @@ if(!class_exists('BlockPro')) {
 						array(
 							'{title}'			=> $this->textLimit($newsTitle, $this->config['titleLimit']),
 							'{full-title}'		=> $newsTitle,
-							'{full-link}'		=> $this->getPostUrl($newsItem),
+							'{full-link}'		=> $this->getPostUrl($newsItem, $newsItem['date']),
 							'{image}'			=> $image,
 							'{full-image}'		=> $imageFull,
 							'{short-story}' 	=> $this->textLimit($newsItem['short_story'], $this->config['textLimit']),
@@ -421,7 +421,7 @@ if(!class_exists('BlockPro')) {
 							'{login}'			=> $newsItem['autor'],
 							'[profile]'			=> '<a href="'.$go_page.'">',
 							'[/profile]'		=> '</a>',
-							'[com-link]'		=> $newsItem['allow_comm']?'<a href="'.$this->getPostUrl($newsItem).'#comment">':'',
+							'[com-link]'		=> $newsItem['allow_comm']?'<a href="'.$this->getPostUrl($newsItem, $newsItem['date']).'#comment">':'',
 							'[/com-link]'		=> $newsItem['allow_comm']?'</a>':'',
 							'{comments-num}'	=> $newsItem['allow_comm']?$newsItem['comm_num']:'',
 							'{views}'			=> $newsItem['news_read'],
@@ -639,8 +639,8 @@ if(!class_exists('BlockPro')) {
 		 * @param $post - массив с информацией о статье
 		 * @return string URL для категории
 		 */
-		public function getPostUrl($post)
-		{
+		public function getPostUrl($post, $postDate)
+		{		
 			if($this->dle_config['allow_alt_url'] == 'yes')
 			{
 				if(
@@ -660,7 +660,7 @@ if(!class_exists('BlockPro')) {
 				}
 				else
 				{
-					$url = $this->dle_config['http_home_url'].date('Y/m/d/', strtotime($post['date'])).$post['alt_name'].'.html';
+					$url = $this->dle_config['http_home_url'].date('Y/m/d/', $postDate).$post['alt_name'].'.html';
 				}
 			}
 			else
