@@ -265,6 +265,10 @@ if(!class_exists('BlockPro')) {
 				case 'title':					// По алфавиту
 					$sort = 'title ';
 					break;
+					
+				case 'id':						// По id новостей
+					$sort = 'id ';
+					break;
 				
 				default:						// Топ как в DLE (сортировка по умолчанию)
 					$sort = 'rating '.$ordering.', comm_num '.$ordering.', news_read ';
