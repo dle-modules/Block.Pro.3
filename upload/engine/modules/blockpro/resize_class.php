@@ -10,12 +10,14 @@
    #  Usage Example:
    #                     include("classes/resize_class.php");
    #                     $resizeObj = new resize('images/cars/large/input.jpg');
+   #                     // $resizeObj = new resize('http://yandex.st/www/1.526/yaru/i/logo.png');
    #                     $resizeObj -> resizeImage(150, 100, 0);
    #                     $resizeObj -> saveImage('images/cars/large/output.jpg', 100);
    #
    #
    # ========================================================================#
 // Как всегда главная строка)))
+
 if( ! defined( 'DATALIFEENGINE' ) ) {
 	// Самый правильный посыл хакеру)))
 	die( '<iframe width="853" height="480" style="margin: 50px;" src="http://www.youtube.com/embed/mTQLW3FNy-g" frameborder="0" allowfullscreen></iframe>' );
@@ -32,8 +34,12 @@ if( ! defined( 'DATALIFEENGINE' ) ) {
 
 			function __construct($fileName)
 			{
-				// *** Open up the file
-				$this->image = $this->openImage($fileName);
+				// Если $fileName начинается с http:// или https:// - открываем ее с Curl
+				if (preg_match('~^http(s)?://~', $fileName)) {
+					$this->image = $this->openImageWithCurl($fileName);
+				} else {
+					$this->image = $this->openImage($fileName);
+				}
 
 				// *** Get width and height
 				$this->width  = imagesx($this->image);
@@ -51,6 +57,36 @@ if( ! defined( 'DATALIFEENGINE' ) ) {
 					return false;
 				return $func($file);
 			}
+
+			## --------------------------------------------------------
+
+			private function openImageWithCurl($url)
+			{	
+			// die('nooo');
+				$extension = strtolower(strrchr($file, '.'));
+				$this->extension = $extension == '.jpg' ? '.jpeg' : $extension;
+
+				$file = $this->curlRequest($url);
+				if ($file == '') 
+					return false;
+									
+				return imagecreatefromstring($file);
+			}
+
+			## --------------------------------------------------------
+
+			private function curlRequest($url) {
+				$ch = curl_init();   
+				curl_setopt($ch, CURLOPT_URL, $url);			
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);		
+				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+				curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; rv:12.0) Gecko/20120403211507 Firefox/12.0');
+				$contents = curl_exec($ch);	
+				curl_close($ch);				
+				return $contents; 
+			}	
 
 			## --------------------------------------------------------
 
@@ -193,8 +229,15 @@ if( ! defined( 'DATALIFEENGINE' ) ) {
 				//imagedestroy($this->imageResized);
 
 				// *** Now crop from center to exact requested size
-				$this->imageResized = imagecreatetruecolor($newWidth , $newHeight);
-				imagecopyresampled($this->imageResized, $crop , 0, 0, $cropStartX, $cropStartY, $newWidth, $newHeight , $newWidth, $newHeight);
+				$this->imageResized = imagecreatetruecolor($newWidth, $newHeight);
+ 
+				if($this->extension == '.png' || $this->extension == '.gif')
+				{
+					imagecolortransparent($this->imageResized, imagecolorallocatealpha($this->imageResized, 0, 0, 0, 127));
+					imagealphablending($this->imageResized, false);
+					imagesavealpha($this->imageResized, true);
+				}
+				 imagecopyresampled($this->imageResized, $crop , 0, 0, $cropStartX, $cropStartY, $newWidth, $newHeight , $newWidth, $newHeight);
 			}
 
 			## --------------------------------------------------------
