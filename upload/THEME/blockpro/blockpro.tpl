@@ -11,6 +11,7 @@
 	{author} <br>
 	[com-link]{comments-num}[/com-link] <br>
 	{views} <br>
+	[tags]{tags}[/tags] <br>
 	[comments]есть комментарии <br>[/comments]
 	[not-comments]нет комментариев <br>[/not-comments]
 	{date} <br>

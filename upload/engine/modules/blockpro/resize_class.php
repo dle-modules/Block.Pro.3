@@ -10,12 +10,14 @@
    #  Usage Example:
    #                     include("classes/resize_class.php");
    #                     $resizeObj = new resize('images/cars/large/input.jpg');
+   #                     // $resizeObj = new resize('http://yandex.st/www/1.526/yaru/i/logo.png');
    #                     $resizeObj -> resizeImage(150, 100, 0);
    #                     $resizeObj -> saveImage('images/cars/large/output.jpg', 100);
    #
    #
    # ========================================================================#
 // Как всегда главная строка)))
+
 if( ! defined( 'DATALIFEENGINE' ) ) {
 	// Самый правильный посыл хакеру)))
 	die( '<iframe width="853" height="480" style="margin: 50px;" src="http://www.youtube.com/embed/mTQLW3FNy-g" frameborder="0" allowfullscreen></iframe>' );
@@ -25,45 +27,65 @@ if( ! defined( 'DATALIFEENGINE' ) ) {
 		{
 			// *** Class variables
 			private $image;
-		    private $width;
-		    private $height;
+			private $width;
+			private $height;
 			private $imageResized;
+			private $extension;
 
 			function __construct($fileName)
 			{
-				// *** Open up the file
-				$this->image = $this->openImage($fileName);
+				// Если $fileName начинается с http:// или https:// - открываем ее с Curl
+				if (preg_match('~^http(s)?://~', $fileName)) {
+					$this->image = $this->openImageWithCurl($fileName);
+				} else {
+					$this->image = $this->openImage($fileName);
+				}
 
-			    // *** Get width and height
-			    $this->width  = imagesx($this->image);
-			    $this->height = imagesy($this->image);
+				// *** Get width and height
+				$this->width  = imagesx($this->image);
+				$this->height = imagesy($this->image);
 			}
 
 			## --------------------------------------------------------
 
 			private function openImage($file)
 			{
-				// *** Get extension
 				$extension = strtolower(strrchr($file, '.'));
-
-				switch($extension)
-				{
-					case '.jpg':
-					case '.jpeg':
-						$img = @imagecreatefromjpeg($file);
-						break;
-					case '.gif':
-						$img = @imagecreatefromgif($file);
-						break;
-					case '.png':
-						$img = @imagecreatefrompng($file);
-						break;
-					default:
-						$img = false;
-						break;
-				}
-				return $img;
+				$this->extension = $extension == '.jpg' ? '.jpeg' : $extension;
+				$func = 'imagecreatefrom' . substr($this->extension, 1);
+				if(!function_exists($func))
+					return false;
+				return $func($file);
 			}
+
+			## --------------------------------------------------------
+
+			private function openImageWithCurl($url)
+			{	
+				$extension = strtolower(strrchr($url, '.'));
+				$this->extension = $extension == '.jpg' ? '.jpeg' : $extension;
+
+				$file = $this->curlRequest($url);
+				if ($file == '') 
+					return false;
+									
+				return imagecreatefromstring($file);
+			}
+
+			## --------------------------------------------------------
+
+			private function curlRequest($url) {
+				$ch = curl_init();   
+				curl_setopt($ch, CURLOPT_URL, $url);			
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);		
+				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+				curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; rv:12.0) Gecko/20120403211507 Firefox/12.0');
+				$contents = curl_exec($ch);	
+				curl_close($ch);				
+				return $contents; 
+			}	
 
 			## --------------------------------------------------------
 
@@ -71,16 +93,21 @@ if( ! defined( 'DATALIFEENGINE' ) ) {
 			{
 				// *** Get optimal width and height - based on $option
 				$optionArray = $this->getDimensions($newWidth, $newHeight, $option);
-
+ 
 				$optimalWidth  = $optionArray['optimalWidth'];
 				$optimalHeight = $optionArray['optimalHeight'];
-
-
+ 
+ 
 				// *** Resample - create image canvas of x, y size
 				$this->imageResized = imagecreatetruecolor($optimalWidth, $optimalHeight);
-				imagecopyresampled($this->imageResized, $this->image, 0, 0, 0, 0, $optimalWidth, $optimalHeight, $this->width, $this->height);
-
-
+ 
+				if($this->extension == '.png' || $this->extension == '.gif')
+				{
+					imagecolortransparent($this->imageResized, imagecolorallocatealpha($this->imageResized, 0, 0, 0, 127));
+					imagealphablending($this->imageResized, false);
+					imagesavealpha($this->imageResized, true);
+				}
+				 imagecopyresampled($this->imageResized, $this->image, 0, 0, 0, 0, $optimalWidth, $optimalHeight, $this->width, $this->height);
 				// *** if option is 'crop', then crop too
 				if ($option == 'crop') {
 					$this->crop($optimalWidth, $optimalHeight, $newWidth, $newHeight);
@@ -201,54 +228,34 @@ if( ! defined( 'DATALIFEENGINE' ) ) {
 				//imagedestroy($this->imageResized);
 
 				// *** Now crop from center to exact requested size
-				$this->imageResized = imagecreatetruecolor($newWidth , $newHeight);
-				imagecopyresampled($this->imageResized, $crop , 0, 0, $cropStartX, $cropStartY, $newWidth, $newHeight , $newWidth, $newHeight);
+				$this->imageResized = imagecreatetruecolor($newWidth, $newHeight);
+ 
+				if($this->extension == '.png' || $this->extension == '.gif')
+				{
+					imagecolortransparent($this->imageResized, imagecolorallocatealpha($this->imageResized, 0, 0, 0, 127));
+					imagealphablending($this->imageResized, false);
+					imagesavealpha($this->imageResized, true);
+				}
+				 imagecopyresampled($this->imageResized, $crop , 0, 0, $cropStartX, $cropStartY, $newWidth, $newHeight , $newWidth, $newHeight);
 			}
 
 			## --------------------------------------------------------
 
 			public function saveImage($savePath, $imageQuality="100")
-			{
-				// *** Get extension
-        		$extension = strrchr($savePath, '.');
-       			$extension = strtolower($extension);
-
-				switch($extension)
-				{
-					case '.jpg':
-					case '.jpeg':
-						if (imagetypes() & IMG_JPG) {
-							imagejpeg($this->imageResized, $savePath, $imageQuality);
-						}
-						break;
-
-					case '.gif':
-						if (imagetypes() & IMG_GIF) {
-							imagegif($this->imageResized, $savePath);
-						}
-						break;
-
-					case '.png':
-						// *** Scale quality from 0-100 to 0-9
-						$scaleQuality = round(($imageQuality/100) * 9);
-
-						// *** Invert quality setting as 0 is best, not 9
-						$invertScaleQuality = 9 - $scaleQuality;
-
-						if (imagetypes() & IMG_PNG) {
-							 imagepng($this->imageResized, $savePath, $invertScaleQuality);
-						}
-						break;
-
-					// ... etc
-
-					default:
-						// *** No extension - No save.
-						break;
-				}
-
-				imagedestroy($this->imageResized);
-			}
+            {
+                $save = 'image' . substr($this->extension, 1);
+                if(!function_exists($save)) //хотя проверка в принципе не нужна, т.к. уже была при открытии
+                    return false;
+                ($this->extension == '.gif')
+                        ? $save ($this->imageResized, $savePath)
+                        : $save (
+                             $this->imageResized,
+                             $savePath,
+                            ($this->extension=='.png' ? (9 - round(($imageQuality/100) * 9)) : $imageQuality)
+ 							// die($savePath);
+                        );
+                imagedestroy($this->imageResized);
+            }
 
 
 			## --------------------------------------------------------
