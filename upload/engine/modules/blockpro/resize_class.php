@@ -62,8 +62,7 @@ if( ! defined( 'DATALIFEENGINE' ) ) {
 
 			private function openImageWithCurl($url)
 			{	
-			// die('nooo');
-				$extension = strtolower(strrchr($file, '.'));
+				$extension = strtolower(strrchr($url, '.'));
 				$this->extension = $extension == '.jpg' ? '.jpeg' : $extension;
 
 				$file = $this->curlRequest($url);
