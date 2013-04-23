@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.2.2.2 (21.03.2013)
+Версия: 3.3.0.0b (23.04.2013)
 =============================================================================
 */ 
 
@@ -363,12 +363,7 @@ if(!class_exists('BlockPro')) {
 					// Изображение из дополнительного поля 
 					default:
 						$xfieldsdata = xfieldsdataload($newsItem['xfields']);
-						// if(!empty($xfieldsdata) && !empty($xfieldsdata[$this->config['image']]))
-						// {
-							// $imgArray = getImage($xfieldsdata[$this->config['image']], $newsItem['date']);
-							$imgArray = $this->getImage($xfieldsdata[$this->config['image']], $newsItem['date']);
-							//$imgArray = $this->getImage($newsItem['short_story'], $newsItem['date']);
-						// }
+						$imgArray = $this->getImage($xfieldsdata[$this->config['image']], $newsItem['date']);
 						break;
 				}
 				
@@ -388,6 +383,24 @@ if(!class_exists('BlockPro')) {
 					$showDate = $lang['time_gestern'].langdate(', H:i', $newsItem['date']);		
 				} else {			
 					$showDate = langdate($this->dle_config['timestamp_active'], $newsItem['date']);		
+				}
+
+				// Формируем вывод облака тегов
+				if($this->dle_config['allow_tags'] && $newsItem['tags']) {
+					$showTagsArr = array();
+					$newsItem['tags'] = explode(",", $newsItem['tags']);
+
+					foreach ($newsItem['tags'] as $value) {				
+						$value = trim($value);										
+						if($this->dle_config['allow_alt_url'] == "yes" ) 
+							$showTagsArr[] = "<a href=\"".$this->dle_config['http_home_url']."tags/".urlencode($value)."/\">".$value."</a>";
+						else 
+							$showTagsArr[] = "<a href=\"$PHP_SELF?do=tags&amp;tag=".urlencode($value)."\">".$value."</a>";
+						
+						$showTags = implode(', ', $showTagsArr);
+					}
+				} else {
+					$showTags = '';
 				}
 
 				/**
@@ -426,6 +439,7 @@ if(!class_exists('BlockPro')) {
 							'{comments-num}'	=> $newsItem['allow_comm']?$newsItem['comm_num']:'',
 							'{views}'			=> $newsItem['news_read'],
 							'{date}'			=> $showDate,
+							'{tags}'			=> $showTags,
 							'{rating}'			=> $newsItem['allow_rate']?ShowRating( $newsItem['id'], $newsItem['rating'], $newsItem['vote_num'], 0 ):'', 
 							'{vote-num}'		=> $newsItem['allow_rate']?$newsItem['vote_num']:'', 
 
@@ -434,6 +448,7 @@ if(!class_exists('BlockPro')) {
 
 							"'\[comments\\](.*?)\[/comments\]'si"                     => $newsItem['comm_num']!=='0'?'\\1':'',
 							"'\[not-comments\\](.*?)\[/not-comments\]'si"             => $newsItem['comm_num']=='0'?'\\1':'',
+							"'\[tags\\](.*?)\[/tags\]'si"                             => ($this->dle_config['allow_tags'] && $newsItem['tags'])?'\\1':'',
 							"'\[rating\\](.*?)\[/rating\]'si"                         => $newsItem['allow_rate']?'\\1':'',
 							"'\[allow-comments\\](.*?)\[/allow-comments\]'si"         => $newsItem['allow_comm']?'\\1':'',
 							"'\[disallow-comments\\](.*?)\[/disallow-comments\]'si"   => !$newsItem['allow_comm']?'\\1':'',
@@ -441,7 +456,6 @@ if(!class_exists('BlockPro')) {
 						array(
 							// preg_tpl array
 							"#\{date=(.+?)\}#ie"                  => "langdate('\\1', '{$newsItem['date']}')",
-							//"#\{title limit=['\"](.+?)['\"]\}#is" => $this->textLimit($newsTitle, "\1").'\\1', // - что-то не воркает это дело. как то не правильно передаются данные, даже если пописать непосредственно внутри .
 
 						),
 						array(
@@ -537,6 +551,7 @@ if(!class_exists('BlockPro')) {
 		 * @param $post - массив с информацией о статье
 		 * @return array - URL`s уменьшенной картинки и оригинальной
 		 * если картинка лежит на внешнем ресурсе и включен параметр remoteImages - выводится url внешней картинки 
+		 * если включен параметр grabRemote - внешняя картинка будет загружена на сайт
 		 * если картинка не обработалась - выводится пустота
 		 */
 
@@ -555,19 +570,50 @@ if(!class_exists('BlockPro')) {
 			
 			if(preg_match_all('/<img(?:\\s[^<>]*?)?\\bsrc\\s*=\\s*(?|"([^"]*)"|\'([^\']*)\'|([^<>\'"\\s]*))[^<>]*>/i', $post, $m) || $xf_img) {
 				
-				// Адрес первой картинки в новости
-				$url = ($xf_img) ? $post : $m[1][0];	
+				// Адрес первой картинки в допполе или в новости
+				if ($xf_img) {
+					if (preg_match_all('/<img(?:\\s[^<>]*?)?\\bsrc\\s*=\\s*(?|"([^"]*)"|\'([^\']*)\'|([^<>\'"\\s]*))[^<>]*>/i', $post, $n)) {
+						$url = $n[1][0];	
+					} else {
+						$url = $post;
+					}					
+				} else {
+					$url = $m[1][0];	
+				}
 				
-				//Выдёргиваем оригинал, на случай если уменьшить надо до размеров больше, чем thumb в новости									
-				$imgOriginal = str_ireplace('/thumbs', '', $url); 	
+				
+				//Выдёргиваем оригинал, на случай если уменьшить надо до размеров больше, чем thumb в новости и если это не запрещено в настройках.
+				$imgOriginal = ($this->config['showSmall']) ? $url : str_ireplace('/thumbs', '', $url);
+					
 
-				// Удаляем текущий домен из строки
-				$urlShort = str_ireplace('http://'.$_SERVER['HTTP_HOST'], '', $imgOriginal);
+				// Удаляем текущий домен (в т.ч. с www) из строки.
+				$urlShort = str_ireplace(array('http://'.$_SERVER['HTTP_HOST'] , 'http://www.'.$_SERVER['HTTP_HOST']), '', $imgOriginal);
 
-				// Если http нет - работаем с картинкой, если есть http или смайлик/спойлер - пропускаем, такая картинка нам не пойдёт, вставим заглушку
-				if (stripos($urlShort, 'http') === false && stripos($urlShort, 'dleimages') === false && stripos($urlShort, 'engine/data/emoticons') === false && $post != '') 
+				// Проверяем наша картинка или чужая.
+				$isHttp = (stripos($urlShort, 'http:') === false) ? false : true;
+
+				// Проверяем разрешено ли тянуть сторонние картинки.
+				$grabRemoteOn = ($this->config['grabRemote']) ? true : false;
+
+				// Отдаём заглушку если это внешняя картинка и запрещено использовать внешние, или если это смайлик или спойлер, или если ничего нет.
+				if (
+					($isHttp && !$this->config['remoteImages']) 
+					|| (stripos($urlShort, 'dleimages') !== false && stripos($urlShort, 'engine/data/emoticons') !== false) 
+					|| (!$urlShort)
+					) {
+					$imgResized = '';
+					$imgOriginal = '';
+				}
+
+				// Если внешняя картинка - возвращаем её, при наличии перемнной remoteImages и если запрещено грабить в строке подключения
+				elseif ($isHttp && $this->config['remoteImages'] && !$grabRemoteOn) {
+					$imgResized = $urlShort;						
+				}
+
+				// Работаем с картинкой, если есть косяк - стопарим, такая картинка нам не пойдёт, вставим заглушку
+				elseif ( $post != '') 
 				{
-					// Если Есть параметр imgSize и картинка лежит у нас на сервере - включаем обрезку картинок
+					// Если есть параметр imgSize и есть картинка или imgSize, есть картинка, она чужая и разрешено грабить - включаем обрезку картинок
 					if ($this->config['imgSize'] && $urlShort) 
 					{
 						// Создаём и назначаем права, если нет таковых
@@ -579,14 +625,19 @@ if(!class_exists('BlockPro')) {
 							@chmod($dir, 0755);
 						}
 
-						// Подставляем корневю дирректорию, чтоб ресайзер понял что ему дают.
-						$imgResized = ROOT_DIR . $urlShort;					
+						// Присваиваем переменной значение картинки (в т.ч. если это внешняя картинка)
+						$imgResized = $urlShort;	
+						
+						// Если не внешняя картинка - подставляем корневю дирректорию, чтоб ресайзер понял что ему дают.
+						if (!$isHttp) {
+							$imgResized = ROOT_DIR . $urlShort;					
+						}
 						
 						// Определяем новое имя файла
 						$fileName = $this->config['imgSize'].'_'.$this->config['resizeType'].'_'.strtolower(basename($imgResized)); 		
 
-						// Если картинки нет - создаём её
-						if(!file_exists($dir.$fileName)) 
+						// Если картинки нет и она локальная, или картинка внешняя и разрешено тянуть внешние - создаём её
+						if((!file_exists($dir.$fileName) && !$isHttp) || (!file_exists($dir.$fileName) && $grabRemoteOn && $isHttp)) 
 						{ 
 							// Разделяем высоту и ширину
 							$imgSize = explode('x', $this->config['imgSize']); 	
@@ -605,8 +656,9 @@ if(!class_exists('BlockPro')) {
 								); 
 							$resizeImg -> saveImage($dir.$fileName, $this->config['imgQuality']); 		//Сохраняем картинку в папку /uploads/blockpro/[размер_уменьшенной_копии]/[месяц_создания новости]
 						}					 									
-						
-						$imgResized = $this->dle_config['http_home_url'].'uploads/blockpro/'.$dir_prefix.$fileName;	
+						// Если файл есть - отдаём картинку с сервера.
+						if (file_exists($dir.$fileName))
+							$imgResized = $this->dle_config['http_home_url'].'uploads/blockpro/'.$dir_prefix.$fileName;	
 					}
 					// Если параметра imgSize нет - отдаём оригинальную картинку
 					else 
@@ -615,17 +667,7 @@ if(!class_exists('BlockPro')) {
 					}
 				} 
 
-				// Если внешняя картинка - возвращаем её, при наличии перемнной remoteImages в строке подключения
-				elseif (stripos($urlShort, 'http') !== false && $this->config['remoteImages']) {
-					$imgResized = $urlShort;						
-				}
-
-				// Если remoteImages не указан - выдаём пустоту
-				elseif (stripos($urlShort, 'http') !== false)
-				{
-					$imgResized = '';
-					$imgOriginal = '';
-				}
+				
 
 				// Нам нужен на выходе массив из двух картинок
 				$data = array('imgResized' => $imgResized, 'imgOriginal' => $imgOriginal);				
@@ -814,6 +856,8 @@ if(!class_exists('BlockPro')) {
 		
 		'image'			=> !empty($image)?$image:'short_story',						// Откуда брать картинку (short_story, full_story или xfield)
 		'remoteImages'	=> !empty($remoteImages)?$remoteImages:false,				// Показывать картинки с других сайтов (уменьшаться они не будут!)
+		'grabRemote'	=> !empty($grabRemote)?$grabRemote:false,					// Загружать удалённые изображения к себе на сайт?
+		'showSmall'		=> !empty($showSmall)?$showSmall:false,						// Брать для показа уменьшенную копию, если она есть.
 		'noimage'		=> !empty($noimage)?$noimage:'noimage.png',					// Картинка-заглушка маленькая
 		'noimageFull'	=> !empty($noimageFull)?$noimageFull:'noimage-full.png',	// Картинка-заглушка большая
 		'imgSize'		=> !empty($imgSize)?$imgSize:false,						    // Размер уменьшенной копии картинки
