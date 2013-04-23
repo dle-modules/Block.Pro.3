@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.0.0b (23.04.2013)
+Версия: 3.3.0.0 (24.04.2013)
 =============================================================================
 */ 
 
@@ -275,7 +275,7 @@ if(!class_exists('BlockPro')) {
 			// Формирование запроса в зависимости от версии движка
 			if ($newVersion) {
 				// 9.6 и выше
-				$selectRows = 'p.id, p.autor, p.date, p.short_story, p.full_story, p.xfields, p.title, p.category, p.alt_name, p.allow_comm, p.comm_num, e.news_read, e.allow_rate, e.rating, e.vote_num, e.votes';
+				$selectRows = 'p.id, p.autor, p.date, p.short_story, p.full_story, p.xfields, p.title, p.category, p.alt_name, p.allow_comm, p.comm_num, p.tags, e.news_read, e.allow_rate, e.rating, e.vote_num, e.votes';
 			} else {
 				// старые версии идут лесом
 				echo '<span style="color: #f00">Модуль поддерживает только DLE 9.6 и выше.</span>';
@@ -387,6 +387,7 @@ if(!class_exists('BlockPro')) {
 
 				// Формируем вывод облака тегов
 				if($this->dle_config['allow_tags'] && $newsItem['tags']) {
+					
 					$showTagsArr = array();
 					$newsItem['tags'] = explode(",", $newsItem['tags']);
 
