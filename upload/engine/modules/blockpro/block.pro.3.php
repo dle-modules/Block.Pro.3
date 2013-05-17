@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.0.0 (24.04.2013)
+Версия: 3.3.1.0 (17.05.2013)
 =============================================================================
 */ 
 
@@ -156,14 +156,16 @@ if(!class_exists('BlockPro')) {
 			$wheres[] = 'approve';
 
 			// Фильтрация КАТЕГОРИЙ по их ID
+			
+
 			if ($this->config['catId'] == 'this') $this->config['catId'] = $this->category_id;
 			if ($this->config['notCatId'] == 'this') $this->config['notCatId'] = $this->category_id;
 			
 			if ($this->config['catId'] || $this->config['notCatId']) 
 			{
 				$ignore = ($this->config['notCatId']) ? 'NOT ' : '';
-				$catArr = ($this->config['notCatId']) ? $this->config['notCatId'] : $this->config['catId'];	
-				
+				$catArr = ($this->config['notCatId']) ? $this->getDiapazone($this->config['notCatId']) : $this->getDiapazone($this->config['catId']);
+
 				$wheres[] = $ignore.'category regexp "[[:<:]]('.str_replace(',', '|', $catArr).')[[:>:]]"';				
 			}
 
@@ -174,7 +176,7 @@ if(!class_exists('BlockPro')) {
 			if (($this->config['postId'] || $this->config['notPostId']) && $this->config['related'] == '') 
 			{
 				$ignorePosts = ($this->config['notPostId']) ? 'NOT ' : '';
-				$postsArr = ($this->config['notPostId']) ? $this->config['notPostId'] : $this->config['postId'];					
+				$postsArr = ($this->config['notPostId']) ? $this->getDiapazone($this->config['notPostId']) : $this->getDiapazone($this->config['postId']);					
 				$wheres[] = $ignorePosts.'id regexp "[[:<:]]('.str_replace(',', '|', $postsArr).')[[:>:]]"';				
 			}
 
@@ -712,6 +714,16 @@ if(!class_exists('BlockPro')) {
 			}
 
 			return $url;
+		}
+		/**
+		 * Получение диапазона между двумя цифрами (используется для категорий и новостей)
+		 * @param string $diapasone 
+		 * @return string
+		 */
+		public function getDiapazone($diapazone)
+		{
+			$diapazone = preg_replace('#(\d+)-(\d+)#e', "implode(',',range('\\1','\\2'))", $diapazone);
+			return $diapazone;
 		}
 		/**
 		 * Метод, формиующий вывод шаблона
