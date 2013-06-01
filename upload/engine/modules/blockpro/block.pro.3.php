@@ -17,7 +17,7 @@ URL: http://nowheredev.ru/
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.1.0 (17.05.2013)
+Версия: 3.3.2.0 (01.06.2013)
 =============================================================================
 */ 
 
@@ -716,14 +716,40 @@ if(!class_exists('BlockPro')) {
 			return $url;
 		}
 		/**
-		 * Получение диапазона между двумя цифрами (используется для категорий и новостей)
+		 * Получение диапазона между двумя цифрами (используется для категорий и новостей) fix by dj-avtosh (Эльхан)
 		 * @param string $diapasone 
 		 * @return string
 		 */
-		public function getDiapazone($diapazone)
+		public function getDiapazone($diapazone = false)
 		{
-			$diapazone = preg_replace('#(\d+)-(\d+)#e', "implode(',',range('\\1','\\2'))", $diapazone);
-			return $diapazone;
+			if ($diapazone !== false)
+			{
+				$diapazone = str_replace(" ", "", $diapazone); 
+				if (strpos ($diapazone, ',') !== false)
+				{
+					$diapazoneArray = explode (',', $diapazone);
+					$diapazoneArray = array_diff($diapazoneArray, array(null));
+		 
+					foreach ($diapazoneArray as $v) 
+					{
+						preg_match ("#(\d+)-(\d+)#i", $v, $test);
+		 
+						$diapazone = !empty($diapazone) && is_array ($diapazone) ? 
+						array_merge ($diapazone, (!empty ($test) ? range($test[1], $test[2]) : array()))
+						: (!empty ($test) ? range($test[1], $test[2]) : array());
+					}
+		 
+				} else {
+					preg_match ("#(\d+)-(\d+)#i", $diapazone, $test); 		 
+					$diapazone = !empty ($test) ? range($test[1], $test[2]) : array();
+				}
+		 
+				$diapazone = !empty ($diapazone) ? array_unique($diapazone) : array();		 
+				$diapazone = implode(',', $diapazone);
+				return $diapazone;
+			}
+		 
+			return array();
 		}
 		/**
 		 * Метод, формиующий вывод шаблона
