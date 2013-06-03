@@ -14,16 +14,19 @@ email: mail@mithrandir.ru
 -----------------------------------------------------------------------------
 Первод в singleton и помошь по коду: nowheremany
 URL: http://nowheredev.ru/
+-----------------------------------------------------------------------------
+Помощь по получению диапазонов значений: Elkhan I. Isaev 
+email: elhan.isaev@gmail.com
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.2.0 (01.06.2013)
+Версия: 3.3.2.1 (03.06.2013)
 =============================================================================
 */ 
 
 // Как всегда главная строка)))
-if( ! defined( 'DATALIFEENGINE' ) ) {
-	die( "Hacking attempt!" );
+if(! defined('DATALIFEENGINE')) {
+	die("Hacking attempt!");
 }
 
 if($showstat) $start = microtime(true);
@@ -86,7 +89,7 @@ if(!class_exists('BlockPro')) {
 			$this->get_category();
 			$this->set_config($BlockProConfig);
 
-			// Защита от фашистов )))) (НУЖНА ЛИ? )
+			// Защита от фашистов)))) (НУЖНА ЛИ?)
 			$this->config['postId']     = @$db->safesql(strip_tags(str_replace('/', '', $this->config['postId'])));
 			$this->config['notPostId'] = @$db->safesql(strip_tags(str_replace('/', '', $this->config['notPostId'])));
 
@@ -131,7 +134,7 @@ if(!class_exists('BlockPro')) {
 			}
 
 			// Если nocache не установлен - добавляем префикс (по умолчанию news_) к файлу кеша. 
-			if( !$this->config['nocache'])
+			if(!$this->config['nocache'])
 			{
 				$output = dle_cache($this->config['prefix'].'bp_'.md5($cache_suffix.implode('_', $this->config)));
 			}
@@ -165,7 +168,9 @@ if(!class_exists('BlockPro')) {
 			{
 				$ignore = ($this->config['notCatId']) ? 'NOT ' : '';
 				$catArr = ($this->config['notCatId']) ? $this->getDiapazone($this->config['notCatId']) : $this->getDiapazone($this->config['catId']);
-
+				// echo "<pre class='dle-pre'>"; print_r($this->getDiapazone($this->config['catId'])); echo "</pre>";
+				// echo "<pre class='dle-pre'>"; print_r($this->config['catId']); echo "</pre>";
+				
 				$wheres[] = $ignore.'category regexp "[[:<:]]('.str_replace(',', '|', $catArr).')[[:>:]]"';				
 			}
 
@@ -334,7 +339,7 @@ if(!class_exists('BlockPro')) {
 							$my_cat_icon[] = '<img class="bp-cat-icon" src="'.$cat_info[$element]['icon'].'" alt="'.$cat_info[$element]['name'].'" />';
 						else
 							$my_cat_icon[] = '<img class="bp-cat-icon" src="{THEME}/blockpro/'.$this->config['noicon'].'" alt="'.$cat_info[$element]['name'].'" />';
-						if( $this->dle_config['allow_alt_url'] == 'yes' ) 
+						if($this->dle_config['allow_alt_url'] == 'yes') 
 							$my_cat_link[] = '<a href="'.$this->dle_config['http_home_url'].get_url($element).'/">'.$cat_info[$element]['name'].'</a>';
 						else 
 							$my_cat_link[] = '<a href="'.$PHP_SELF.'?do=cat&category='.$cat_info[$element]['alt_name'].'">'.$cat_info[$element]['name'].'</a>';
@@ -343,7 +348,7 @@ if(!class_exists('BlockPro')) {
 				$categoryUrl = ($newsItem['category']) ? $this->dle_config['http_home_url'] . get_url(intval($newsItem['category'])) . '/' : '/' ;
 
 				// Ссылка на профиль  юзера
-				if( $this->dle_config['allow_alt_url'] == 'yes' ) {
+				if($this->dle_config['allow_alt_url'] == 'yes') {
 					$go_page = $config['http_home_url'].'user/'.urlencode($newsItem['autor']).'/';
 				} else {
 					$go_page = $PHP_SELF.'?subaction=userinfo&amp;user='.urlencode($newsItem['autor']);
@@ -395,7 +400,7 @@ if(!class_exists('BlockPro')) {
 
 					foreach ($newsItem['tags'] as $value) {				
 						$value = trim($value);										
-						if($this->dle_config['allow_alt_url'] == "yes" ) 
+						if($this->dle_config['allow_alt_url'] == "yes") 
 							$showTagsArr[] = "<a href=\"".$this->dle_config['http_home_url']."tags/".urlencode($value)."/\">".$value."</a>";
 						else 
 							$showTagsArr[] = "<a href=\"$PHP_SELF?do=tags&amp;tag=".urlencode($value)."\">".$value."</a>";
@@ -433,7 +438,7 @@ if(!class_exists('BlockPro')) {
 							'{category-icon}'	=> implode('', $my_cat_icon),
 							'{category-url}'	=> $categoryUrl,
 							'{news-id}'			=> $newsItem['id'],
-							'{author}'			=> "<a onclick=\"ShowProfile('" . urlencode( $newsItem['autor'] ) . "', '" . $go_page . "', '" . $user_group[$member_id['user_group']]['admin_editusers'] . "'); return false;\" href=\"" . $go_page . "\">" . $newsItem['autor'] . "</a>",
+							'{author}'			=> "<a onclick=\"ShowProfile('" . urlencode($newsItem['autor']) . "', '" . $go_page . "', '" . $user_group[$member_id['user_group']]['admin_editusers'] . "'); return false;\" href=\"" . $go_page . "\">" . $newsItem['autor'] . "</a>",
 							'{login}'			=> $newsItem['autor'],
 							'[profile]'			=> '<a href="'.$go_page.'">',
 							'[/profile]'		=> '</a>',
@@ -443,7 +448,7 @@ if(!class_exists('BlockPro')) {
 							'{views}'			=> $newsItem['news_read'],
 							'{date}'			=> $showDate,
 							'{tags}'			=> $showTags,
-							'{rating}'			=> $newsItem['allow_rate']?ShowRating( $newsItem['id'], $newsItem['rating'], $newsItem['vote_num'], 0 ):'', 
+							'{rating}'			=> $newsItem['allow_rate']?ShowRating($newsItem['id'], $newsItem['rating'], $newsItem['vote_num'], 0):'', 
 							'{vote-num}'		=> $newsItem['allow_rate']?$newsItem['vote_num']:'', 
 
 						),
@@ -537,13 +542,13 @@ if(!class_exists('BlockPro')) {
 			if ($this->config['textLimit'] != '0' || $this->config['titleLimit'] != '0') 
 			{	
 				$data = strip_tags($data, '<br>');
-				$data = trim(str_replace( array('<br>','<br />'), ' ', $data));
+				$data = trim(str_replace(array('<br>','<br />'), ' ', $data));
 
-				if($count && dle_strlen($data, $this->dle_config['charset'] ) > $count)
+				if($count && dle_strlen($data, $this->dle_config['charset']) > $count)
 				{
-					$data = dle_substr( $data, 0, $count, $this->dle_config['charset'] ). '&hellip;';					
-					if( !$this->config['wordcut'] && ($word_pos = dle_strrpos( $data, ' ', $this->dle_config['charset'] )) ) 
-						$data = dle_substr( $data, 0, $word_pos, $this->dle_config['charset'] ). '&hellip;';
+					$data = dle_substr($data, 0, $count, $this->dle_config['charset']). '&hellip;';					
+					if(!$this->config['wordcut'] && ($word_pos = dle_strrpos($data, ' ', $this->dle_config['charset']))) 
+						$data = dle_substr($data, 0, $word_pos, $this->dle_config['charset']). '&hellip;';
 
 				}
 			}
@@ -614,7 +619,7 @@ if(!class_exists('BlockPro')) {
 				}
 
 				// Работаем с картинкой, если есть косяк - стопарим, такая картинка нам не пойдёт, вставим заглушку
-				elseif ( $post != '') 
+				elseif ($post != '') 
 				{
 					// Если есть параметр imgSize и есть картинка или imgSize, есть картинка, она чужая и разрешено грабить - включаем обрезку картинок
 					if ($this->config['imgSize'] && $urlShort) 
@@ -715,16 +720,20 @@ if(!class_exists('BlockPro')) {
 
 			return $url;
 		}
+
 		/**
-		 * Получение диапазона между двумя цифрами (используется для категорий и новостей) fix by dj-avtosh (Эльхан)
+		 * Получение диапазона между двумя цифрами, и не только
 		 * @param string $diapasone 
 		 * @return string
+		 * @author Elkhan I. Isaev <elhan.isaev@gmail.com>
 		 */
+
 		public function getDiapazone($diapazone = false)
 		{
-			/*if ($diapazone !== false)
+			if ($diapazone !== false)
 			{
 				$diapazone = str_replace(" ", "", $diapazone); 
+
 				if (strpos ($diapazone, ',') !== false)
 				{
 					$diapazoneArray = explode (',', $diapazone);
@@ -732,27 +741,37 @@ if(!class_exists('BlockPro')) {
 		 
 					foreach ($diapazoneArray as $v) 
 					{
-						preg_match ("#(\d+)-(\d+)#i", $v, $test);
-		 
-						$diapazone = !empty($diapazone) && is_array ($diapazone) ? 
-						array_merge ($diapazone, (!empty ($test) ? range($test[1], $test[2]) : array()))
-						: (!empty ($test) ? range($test[1], $test[2]) : array());
+						if (strpos ($v, '-') !== false)
+						{
+							preg_match ("#(\d+)-(\d+)#i", $v, $test);
+			 
+							$diapazone = !empty($diapazone) && is_array ($diapazone) ? 
+							array_merge ($diapazone, (!empty ($test) ? range($test[1], $test[2]) : array()))
+							: (!empty ($test) ? range($test[1], $test[2]) : array());
+
+						} else {
+							$diapazone = !empty($diapazone) && is_array ($diapazone) ? 
+							array_merge ($diapazone, (! empty ($v) ? array ((int) $v) : array()) )
+							: (!empty ($v) ? array ((int) $v) : array());							
+						}
 					}
 		 
-				} else {
+				} elseif (strpos ($diapazone, '-') !== false) {
+
 					preg_match ("#(\d+)-(\d+)#i", $diapazone, $test); 		 
 					$diapazone = !empty ($test) ? range($test[1], $test[2]) : array();
+
+				} else {
+					$diapazone = array ((int) $diapazone);
 				}
 		 
 				$diapazone = !empty ($diapazone) ? array_unique($diapazone) : array();		 
 				$diapazone = implode(',', $diapazone);
-				return $diapazone;
 			}
-		 
-			return array();*/
-			$diapazone = preg_replace('#(\d+)-(\d+)#e', "implode(',',range('\\1','\\2'))", $diapazone);
+
 			return $diapazone;
 		}
+
 		/**
 		 * Метод, формиующий вывод шаблона
 		 * @param $template - имя шаблона
@@ -798,18 +817,18 @@ if(!class_exists('BlockPro')) {
 
 
 			// Обрабатываем допполя - код взят из DLE почти без измененний
-			if( strpos( $tpl->copy_template, "[xfvalue_" ) !== false OR strpos( $tpl->copy_template, "[xfgiven_" ) !== false ) { $xfound = true; $xfields = xfieldsload();}
+			if(strpos($tpl->copy_template, "[xfvalue_") !== false OR strpos($tpl->copy_template, "[xfgiven_") !== false) { $xfound = true; $xfields = xfieldsload();}
 			else $xfound = false;
 			$xfields = xfieldsload();
 			$xfieldsdata = $xf_replace;
-			if( $xfound ) 
+			if($xfound) 
 			{
-				foreach ( $xfields as $value ) 
+				foreach ($xfields as $value) 
 				{
-					$preg_safe_name = preg_quote( $value[0], "'" );
+					$preg_safe_name = preg_quote($value[0], "'");
 
-					if ( $value[6] AND !empty( $xfieldsdata[$value[0]] ) ) {
-						$temp_array = explode( ",", $xfieldsdata[$value[0]] );
+					if ($value[6] AND !empty($xfieldsdata[$value[0]])) {
+						$temp_array = explode(",", $xfieldsdata[$value[0]]);
 						$value3 = array();
 
 						foreach ($temp_array as $value2) {
@@ -817,8 +836,8 @@ if(!class_exists('BlockPro')) {
 							$value2 = trim($value2);
 							$value2 = str_replace("&#039;", "'", $value2);
 
-							if( $config['allow_alt_url'] == "yes" ) $value3[] = "<a href=\"" . $config['http_home_url'] . "xfsearch/" . urlencode( $value2 ) . "/\">" . $value2 . "</a>";
-							else $value3[] = "<a href=\"$PHP_SELF?do=xfsearch&amp;xf=" . urlencode( $value2 ) . "\">" . $value2 . "</a>";
+							if($config['allow_alt_url'] == "yes") $value3[] = "<a href=\"" . $config['http_home_url'] . "xfsearch/" . urlencode($value2) . "/\">" . $value2 . "</a>";
+							else $value3[] = "<a href=\"$PHP_SELF?do=xfsearch&amp;xf=" . urlencode($value2) . "\">" . $value2 . "</a>";
 						}
 
 						$xfieldsdata[$value[0]] = implode(", ", $value3);
@@ -829,18 +848,18 @@ if(!class_exists('BlockPro')) {
 
 					}
 			
-					if( empty($xfieldsdata[$value[0]])) {
-						$tpl->copy_template = preg_replace( "'\\[xfgiven_{$preg_safe_name}\\](.*?)\\[/xfgiven_{$preg_safe_name}\\]'is", "", $tpl->copy_template );
-						$tpl->copy_template = str_replace( "[xfnotgiven_{$value[0]}]", "", $tpl->copy_template );
-						$tpl->copy_template = str_replace( "[/xfnotgiven_{$value[0]}]", "", $tpl->copy_template );
+					if(empty($xfieldsdata[$value[0]])) {
+						$tpl->copy_template = preg_replace("'\\[xfgiven_{$preg_safe_name}\\](.*?)\\[/xfgiven_{$preg_safe_name}\\]'is", "", $tpl->copy_template);
+						$tpl->copy_template = str_replace("[xfnotgiven_{$value[0]}]", "", $tpl->copy_template);
+						$tpl->copy_template = str_replace("[/xfnotgiven_{$value[0]}]", "", $tpl->copy_template);
 					} else {
-						$tpl->copy_template = preg_replace( "'\\[xfnotgiven_{$preg_safe_name}\\](.*?)\\[/xfnotgiven_{$preg_safe_name}\\]'is", "", $tpl->copy_template );
-						$tpl->copy_template = str_replace( "[xfgiven_{$value[0]}]", "", $tpl->copy_template );
-						$tpl->copy_template = str_replace( "[/xfgiven_{$value[0]}]", "", $tpl->copy_template );
+						$tpl->copy_template = preg_replace("'\\[xfnotgiven_{$preg_safe_name}\\](.*?)\\[/xfnotgiven_{$preg_safe_name}\\]'is", "", $tpl->copy_template);
+						$tpl->copy_template = str_replace("[xfgiven_{$value[0]}]", "", $tpl->copy_template);
+						$tpl->copy_template = str_replace("[/xfgiven_{$value[0]}]", "", $tpl->copy_template);
 					}
 					
-					$xfieldsdata[$value[0]] = stripslashes( $xfieldsdata[$value[0]] );
-					$tpl->copy_template = str_replace( "[xfvalue_{$value[0]}]", $xfieldsdata[$value[0]], $tpl->copy_template );
+					$xfieldsdata[$value[0]] = stripslashes($xfieldsdata[$value[0]]);
+					$tpl->copy_template = str_replace("[xfvalue_{$value[0]}]", $xfieldsdata[$value[0]], $tpl->copy_template);
 				}
 			}
 			// Закончили обрабатывать допполя
