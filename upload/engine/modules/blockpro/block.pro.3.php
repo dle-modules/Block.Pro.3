@@ -722,7 +722,7 @@ if(!class_exists('BlockPro')) {
 		 */
 		public function getDiapazone($diapazone = false)
 		{
-			if ($diapazone !== false)
+			/*if ($diapazone !== false)
 			{
 				$diapazone = str_replace(" ", "", $diapazone); 
 				if (strpos ($diapazone, ',') !== false)
@@ -749,7 +749,9 @@ if(!class_exists('BlockPro')) {
 				return $diapazone;
 			}
 		 
-			return array();
+			return array();*/
+			$diapazone = preg_replace('#(\d+)-(\d+)#e', "implode(',',range('\\1','\\2'))", $diapazone);
+			return $diapazone;
 		}
 		/**
 		 * Метод, формиующий вывод шаблона
