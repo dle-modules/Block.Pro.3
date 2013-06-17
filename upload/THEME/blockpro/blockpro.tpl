@@ -21,7 +21,7 @@
 	[disallow-comments]комментарии зпрещены<br>[/disallow-comments]
 	[xfgiven_xfield][xfvalue_xfield][/xfgiven_xfield]
 	[xfnotgiven_xfield]Допполе не заполнено[/xfnotgiven_xfield]
-	
+	<img src="{avatar}" alt="{login}"/>
 	<hr>
 </div>
 

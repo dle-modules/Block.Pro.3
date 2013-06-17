@@ -20,7 +20,7 @@ email: elhan.isaev@gmail.com
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.2.1 (03.06.2013)
+Версия: 3.3.3.0 (04.06.2013)
 =============================================================================
 */ 
 
@@ -228,13 +228,20 @@ if(!class_exists('BlockPro')) {
 
 			}
 
+			// Определяем переменные, чтоб сто раз не писать одно и тоже
+			$bDay = intval($this->config['day']);
+			$bDayCount = intval($this->config['dayCount']);
 
 			// Разбираемся с временными рамками отбора новостей, если кол-во дней указано - ограничиваем выборку, если нет - выводим без ограничения даты
-			if(intval($this->config['day'])) $wheres[] =  'date >= "'.$tooday.'" - INTERVAL ' .  intval($this->config['day']) . ' DAY';
+			if($bDay) $wheres[] =  'date >= "'.$tooday.'" - INTERVAL '.$bDay.' DAY';
 
-			// Условие для отображения только тех постов, дата публикации которых уже наступила
-			
-			$wheres[] = "date < '{$tooday}'";
+			// Если задана переменная dayCount и day, а так же day больше dayCount - отбираем новости за указанный интервал от указанного периода 
+			if($bDay && $bDayCount && ($bDayCount < $bDay)) {
+				$wheres[] = 'date < "'.$tooday.'" - INTERVAL '.($bDay-$bDayCount).' DAY';
+			} else {
+				// Условие для отображения только тех постов, дата публикации которых уже наступила
+				$wheres[] = 'date < "'.$tooday.'"';
+			}
 			
 			// Складываем условия
 			$where = implode(' AND ', $wheres);
@@ -349,7 +356,7 @@ if(!class_exists('BlockPro')) {
 
 				// Ссылка на профиль  юзера
 				if($this->dle_config['allow_alt_url'] == 'yes') {
-					$go_page = $config['http_home_url'].'user/'.urlencode($newsItem['autor']).'/';
+					$go_page = $this->dle_config['http_home_url'].'user/'.urlencode($newsItem['autor']).'/';
 				} else {
 					$go_page = $PHP_SELF.'?subaction=userinfo&amp;user='.urlencode($newsItem['autor']);
 				}
@@ -411,6 +418,15 @@ if(!class_exists('BlockPro')) {
 					$showTags = '';
 				}
 
+				// Выводим аватарку пользователя, если включен вывод (добавляет один запрос на каждую новость).
+				$avatar = '{THEME}/images/noavatar.png';
+				if ($this->config['avatar']) {
+					$userAvatar = $this->load_table(PREFIX . '_users', 'foto', 'name="'.$newsItem['autor'].'"', false, '0', '1', '', '');
+					if($userAvatar['foto']) {
+						$avatar = $this->dle_config['http_home_url'].'uploads/fotos/'.$userAvatar['foto'];
+					}
+				}
+
 				/**
 				 * Код, формирующий вывод шаблона новости
 				 */
@@ -450,6 +466,7 @@ if(!class_exists('BlockPro')) {
 							'{tags}'			=> $showTags,
 							'{rating}'			=> $newsItem['allow_rate']?ShowRating($newsItem['id'], $newsItem['rating'], $newsItem['vote_num'], 0):'', 
 							'{vote-num}'		=> $newsItem['allow_rate']?$newsItem['vote_num']:'', 
+							'{avatar}'			=> $avatar,
 
 						),
 						array(
@@ -477,7 +494,7 @@ if(!class_exists('BlockPro')) {
 				} else 
 				{
 					// Если файла шаблона нет - выведем ошибку, а не белый лист.
-					$output = '<b style="color: red;">Отсутствует файл шаблона: '.$template.'.tpl</b>';
+					$output = '<b style="color: red;">Отсутствует файл шаблона: '.$this->config['template'].'.tpl</b>';
 				}
 			}
 
@@ -836,7 +853,7 @@ if(!class_exists('BlockPro')) {
 							$value2 = trim($value2);
 							$value2 = str_replace("&#039;", "'", $value2);
 
-							if($config['allow_alt_url'] == "yes") $value3[] = "<a href=\"" . $config['http_home_url'] . "xfsearch/" . urlencode($value2) . "/\">" . $value2 . "</a>";
+							if($config['allow_alt_url'] == "yes") $value3[] = "<a href=\"" . $this->dle_config['http_home_url'] . "xfsearch/" . urlencode($value2) . "/\">" . $value2 . "</a>";
 							else $value3[] = "<a href=\"$PHP_SELF?do=xfsearch&amp;xf=" . urlencode($value2) . "\">" . $value2 . "</a>";
 						}
 
@@ -910,6 +927,7 @@ if(!class_exists('BlockPro')) {
 		'noicon'		=> !empty($noicon)?$noicon:'noicon.png',					// Заглушка для иконок категорий
 		
 		'day'			=> !empty($day)?$day:false,									// Временной период для отбора новостей		
+		'dayCount'		=> !empty($dayCount)?$dayCount:false,						// Интервал для отбора (т.е. к примеру выбираем новости за прошлую недею так: &day=14&dayCount=7 )
 		'sort'			=> !empty($sort)?$sort:'top',								// Сортировка (top, date, comms, rating, views, title)
 		'order'			=> !empty($order)?$order:'new',								// Направление сортировки
 		
@@ -928,6 +946,7 @@ if(!class_exists('BlockPro')) {
 		'textLimit'	    => !empty($textLimit)?$textLimit:false,					    // Ограничение количества символов
 		'titleLimit'	=> !empty($titleLimit)?$titleLimit:false,					// Ограничение количества символов в заголовке
 		'wordcut'		=> !empty($wordcut)?$wordcut:false,							// Жесткое ограничение кол-ва символов, без учета длины слов		
+		'avatar'		=> !empty($avatar)?$avatar:false,							// Вывод аватарки пользователя (+1 запрос на новость).		
 		
 		'showstat'		=> !empty($showstat)?$showstat:false,						// Показывать время стату по блоку
 		
