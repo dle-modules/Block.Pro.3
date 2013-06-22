@@ -20,7 +20,7 @@ email: elhan.isaev@gmail.com
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.3.0 (04.06.2013)
+Версия: 3.3.3.1 (22.06.2013)
 =============================================================================
 */ 
 
@@ -90,14 +90,17 @@ if(!class_exists('BlockPro')) {
 			$this->set_config($BlockProConfig);
 
 			// Защита от фашистов)))) (НУЖНА ЛИ?)
-			$this->config['postId']     = @$db->safesql(strip_tags(str_replace('/', '', $this->config['postId'])));
-			$this->config['notPostId'] = @$db->safesql(strip_tags(str_replace('/', '', $this->config['notPostId'])));
+			$this->config['postId']			= @$db->safesql(strip_tags(str_replace('/', '', $this->config['postId'])));
+			$this->config['notPostId']		= @$db->safesql(strip_tags(str_replace('/', '', $this->config['notPostId'])));
+			
+			$this->config['author']			= @$db->safesql(strip_tags(str_replace('/', '', $this->config['author'])));
+			$this->config['notAuthor']		= @$db->safesql(strip_tags(str_replace('/', '', $this->config['notAuthor'])));
+			
+			$this->config['xfilter']		= @$db->safesql(strip_tags(str_replace('/', '', $this->config['xfilter'])));
+			$this->config['notXfilter']		= @$db->safesql(strip_tags(str_replace('/', '', $this->config['notXfilter'])));
 
-			$this->config['author']      = @$db->safesql(strip_tags(str_replace('/', '', $this->config['author'])));
-			$this->config['notAuthor']  = @$db->safesql(strip_tags(str_replace('/', '', $this->config['notAuthor'])));
-
-			$this->config['xfilter']     = @$db->safesql(strip_tags(str_replace('/', '', $this->config['xfilter'])));
-			$this->config['notXfilter'] = @$db->safesql(strip_tags(str_replace('/', '', $this->config['notXfilter'])));
+			$this->config['tagFilter']		= @$db->safesql(strip_tags(str_replace('/', '', $this->config['tagFilter'])));
+			$this->config['notTagFilter']	= @$db->safesql(strip_tags(str_replace('/', '', $this->config['notTagFilter'])));
 
 			// Определяем сегодняшнюю дату
 			$tooday = date("Y-m-d H:i:s", (time() + $this->dle_config['date_adjust'] * 60));
@@ -203,6 +206,15 @@ if(!class_exists('BlockPro')) {
 				$ignoreXfilters = ($this->config['notXfilter']) ? 'NOT ' : '';
 				$xfiltersArr = ($this->config['notXfilter']) ? $this->config['notXfilter'] : $this->config['xfilter'];					
 				$wheres[] = $ignoreXfilters.'xfields regexp "[[:<:]]('.str_replace(',', '|', $xfiltersArr).')[[:>:]]"';				
+			}
+
+			// Фильтрация новостей по ТЕГАМ из облака тегов
+
+			if ($this->config['tagFilter'] || $this->config['notTagFilter']) 
+			{
+				$ignoreTags = ($this->config['notTagFilter']) ? 'NOT ' : '';
+				$tagsArr = ($this->config['notTagFilter']) ? $this->config['notTagFilter'] : $this->config['tagFilter'];					
+				$wheres[] = $ignoreTags.'tags regexp "[[:<:]]('.str_replace(',', '|', $tagsArr).')[[:>:]]"';				
 			}
 
 			// Если включен режим вывода похожих новостей:
@@ -920,6 +932,9 @@ if(!class_exists('BlockPro')) {
 
 		'xfilter'		=> !empty($xfilter)?$xfilter:'',							// Имена дополнительных полей для фильтрации по ним новостей (через запятую)
 		'notXfilter'	=> !empty($notXfilter)?$notXfilter:'',					    // Имена дополнительных полей для игнорирования показа (через запятую)
+
+		'tagFilter'		=> !empty($tagFilter)?$tagFilter:'',						// Теги для фильтрации по ним новостей (через запятую)
+		'notTagFilter'	=> !empty($notTagFilter)?$notTagFilter:'',					// Теги для игнорирования показа (через запятую)
 
 		'catId'		    => !empty($catId)?$catId:'',								// Категории для показа	(через запятую)
 		'notCatId'	    => !empty($notCatId)?$notCatId:'',						    // Игнорируемые категории (через запятую)
