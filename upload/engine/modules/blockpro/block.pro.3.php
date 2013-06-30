@@ -158,9 +158,12 @@ if(!class_exists('BlockPro')) {
 			// Условие для отображения только постов, прошедших модерацию
 			$wheres[] = 'approve';
 
-			// Фильтрация КАТЕГОРИЙ по их ID
-			
+			if ($this->config['fixed']) {
+				$fixedType = ($this->config['fixed'] == 'y') ? '' : 'NOT ';
+				$wheres[] = $fixedType.'fixed';
+			}
 
+			// Фильтрация КАТЕГОРИЙ по их ID
 			if ($this->config['catId'] == 'this') $this->config['catId'] = $this->category_id;
 			if ($this->config['notCatId'] == 'this') $this->config['notCatId'] = $this->category_id;
 			
@@ -168,9 +171,6 @@ if(!class_exists('BlockPro')) {
 			{
 				$ignore = ($this->config['notCatId']) ? 'NOT ' : '';
 				$catArr = ($this->config['notCatId']) ? $this->getDiapazone($this->config['notCatId']) : $this->getDiapazone($this->config['catId']);
-				// echo "<pre class='dle-pre'>"; print_r($this->getDiapazone($this->config['catId'])); echo "</pre>";
-				// echo "<pre class='dle-pre'>"; print_r($this->config['catId']); echo "</pre>";
-				
 				$wheres[] = $ignore.'category regexp "[[:<:]]('.str_replace(',', '|', $catArr).')[[:>:]]"';				
 			}
 
@@ -279,7 +279,11 @@ if(!class_exists('BlockPro')) {
 				case 'title':					// По алфавиту
 					$sort = 'title ';
 					break;
-				
+
+				case 'hit':						// Правильный топ (экспериментально)
+					$sort = '(rating + (comm_num*0,6) + (news_read*0,2)) ';
+					break;
+
 				default:						// Топ как в DLE (сортировка по умолчанию)
 					$sort = 'rating '.$ordering.', comm_num '.$ordering.', news_read ';
 					break;
@@ -289,7 +293,7 @@ if(!class_exists('BlockPro')) {
 			// Формирование запроса в зависимости от версии движка
 			if ($newVersion) {
 				// 9.6 и выше
-				$selectRows = 'p.id, p.autor, p.date, p.short_story, p.full_story, p.xfields, p.title, p.category, p.alt_name, p.allow_comm, p.comm_num, p.tags, e.news_read, e.allow_rate, e.rating, e.vote_num, e.votes';
+				$selectRows = 'p.id, p.autor, p.date, p.short_story, p.full_story, p.xfields, p.title, p.category, p.alt_name, p.allow_comm, p.comm_num, p.fixed, p.tags, e.news_read, e.allow_rate, e.rating, e.vote_num, e.votes';
 			} else {
 				// старые версии идут лесом
 				echo '<span style="color: #f00">Модуль поддерживает только DLE 9.6 и выше.</span>';
@@ -911,6 +915,7 @@ if(!class_exists('BlockPro')) {
 
 		'startFrom'	    => !empty($startFrom)?$startFrom:'0',						// C какой новости начать вывод
 		'limit'			=> !empty($limit)?$limit:'10',								// Количество новостей в блоке	
+		'fixed'			=> !empty($fixed)?$fixed:false,								// Обработка фиксированных новостей (y/n показ только фиксированных/обычных новостей)	
 
 		'postId'		=> !empty($postId)?$postId:'',							    // ID новостей для вывода в блоке (через запятую)
 		'notPostId'	    => !empty($notPostId)?$notPostId:'',					    // ID игнорируемых новостей (через запятую)
