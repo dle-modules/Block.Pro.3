@@ -1,7 +1,7 @@
 <?php
 /*
 =============================================================================
-BlockPro 3 - Модуль для вывода блоков с новостями на страницах сайта DLE (тестировался на 9.6 и 10.0)
+BlockPro 3 - Модуль для вывода блоков с новостями на страницах сайта DLE (тестировался на 9.6-10.0)
 =============================================================================
 Автор модуля: ПафНутиЙ 
 URL: http://blockpro.ru/
@@ -20,7 +20,7 @@ email: elhan.isaev@gmail.com
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.4.0 (01.07.2013)
+Версия: 3.3.5.0 (08.07.2013)
 =============================================================================
 */ 
 
@@ -117,6 +117,8 @@ if(!class_exists('BlockPro')) {
 			if ($this->config['notPostId'] == 'this') $cache_suffix .= $_REQUEST["newsid"].'nPId_';
 			if ($this->config['author'] == 'this') $cache_suffix .= $_REQUEST["user"].'a_';
 			if ($this->config['notAuthor'] == 'this') $cache_suffix .= $_REQUEST["user"].'nA_';
+			if ($this->config['tags'] == 'this') $cache_suffix .= $_REQUEST["tag"].'t_';
+			if ($this->config['notTags'] == 'this') $cache_suffix .= $_REQUEST["tag"].'nT_';
 			if ($this->config['related'] == 'this') $cache_suffix .= $_REQUEST["newsid"].'r_';
 
 
@@ -203,6 +205,17 @@ if(!class_exists('BlockPro')) {
 				$ignoreXfilters = ($this->config['notXfilter']) ? 'NOT ' : '';
 				$xfiltersArr = ($this->config['notXfilter']) ? $this->config['notXfilter'] : $this->config['xfilter'];					
 				$wheres[] = $ignoreXfilters.'xfields regexp "[[:<:]]('.str_replace(',', '|', $xfiltersArr).')[[:>:]]"';				
+			}
+
+			// Фильтрация новостей по ТЕГАМ
+			if ($this->config['tags'] == 'this') $this->config['tags'] = $_REQUEST["tag"];
+			if ($this->config['notTags'] == 'this') $this->config['notTags'] = $_REQUEST["tag"];
+
+			if ($this->config['tags'] || $this->config['notTags']) 
+			{
+				$ignoreTags = ($this->config['notTags']) ? 'NOT ' : '';
+				$tagsArr = ($this->config['notTags']) ? $this->config['notTags'] : $this->config['tags'];					
+				$wheres[] = $ignoreTags.'tags regexp "[[:<:]]('.str_replace(',', '|', $tagsArr).')[[:>:]]"';				
 			}
 
 			// Если включен режим вывода похожих новостей:
@@ -928,6 +941,9 @@ if(!class_exists('BlockPro')) {
 
 		'catId'		    => !empty($catId)?$catId:'',								// Категории для показа	(через запятую)
 		'notCatId'	    => !empty($notCatId)?$notCatId:'',						    // Игнорируемые категории (через запятую)
+
+		'tags'		    => !empty($tags)?$tags:'',									// Теги для показа	(через запятую)
+		'notTags'	    => !empty($notTags)?$notTags:'',						    // Игнорируемые теги (через запятую)
 		
 		'noicon'		=> !empty($noicon)?$noicon:'noicon.png',					// Заглушка для иконок категорий
 		
