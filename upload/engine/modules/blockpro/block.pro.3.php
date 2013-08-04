@@ -20,7 +20,7 @@ email: elhan.isaev@gmail.com
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.5.0 (08.07.2013)
+Версия: 3.3.5.1 (04.08.2013) // добавлена переменная forceCache
 =============================================================================
 */ 
 
@@ -133,6 +133,14 @@ if(!class_exists('BlockPro')) {
 				if(@file_exists($filedate)) $cache_time=time()-@filemtime ($filedate);
 				else $cache_time = $this->config['cacheLive']*60;	
 				if ($cache_time>=$this->config['cacheLive']*60) $clear_time_cache = 1;
+			}
+
+			// Принудительное включение кеша, если задана переменная forceCache и если оно требуется.
+			$forceCacheOn = false;
+			if ($this->config['forceCache']) {
+				if ($this->dle_config['allow_cache'] != "yes") { 
+					$this->dle_config['allow_cache'] = "yes"; $forceCacheOn = true;
+				}
 			}
 
 			// Если nocache не установлен - добавляем префикс (по умолчанию news_) к файлу кеша. 
@@ -519,6 +527,9 @@ if(!class_exists('BlockPro')) {
 			if(!$this->config['nocache'])
 			{
 				create_cache($this->config['prefix'].'bp_'.md5($cache_suffix.implode('_', $this->config)), $output);
+
+				// Возвращаем обратно конфог кеша DLE, если включен принудительный кеш
+				if($forceCacheOn) $this->dle_config['allow_cache'] = false;
 			}
 			
 			// Выводим содержимое модуля
@@ -924,6 +935,7 @@ if(!class_exists('BlockPro')) {
 		'template'		=> !empty($template)?$template:'blockpro/blockpro', 		// Название шаблона (без расширения)
 		'prefix'		=> !empty($BpPrefix)?$BpPrefix:'news_', 					// Дефолтный префикс кеша
 		'nocache'		=> !empty($nocache)?$nocache:false,							// Не использовать кеш
+		'forceCache'	=> !empty($forceCache)?$forceCache:false,					// Использовать кеш принудительно.
 		'cacheLive'	    => !empty($cacheLive)?$cacheLive:false,					    // Время жизни кеша в минутах
 
 		'startFrom'	    => !empty($startFrom)?$startFrom:'0',						// C какой новости начать вывод
