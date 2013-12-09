@@ -183,11 +183,33 @@ if (!class_exists('BlockPro')) {
 			// Фильтрация КАТЕГОРИЙ по их ID
 			if ($this->config['catId'] == 'this') $this->config['catId'] = $this->category_id;
 			if ($this->config['notCatId'] == 'this') $this->config['notCatId'] = $this->category_id;
+			
+			// вывод из СУБКАТЕГОРИЙ
+			if ($this->config['catId'] && $this->config['subCats'] == "y") {
+				//разберем catId на случай указания нескольких категорий через "," и через "-"
+			$this->config['catId'] = $this->getDiapazone($this->config['catId']);
+			$this->config['catId'] = explode(",", $this->config['catId']);
+			$subCatscount = count($this->config['catId']);
+			foreach($this->config['catId'] as $subCatsId) {
+				$c++;
+				$slash_v = ($c != $subCatscount) ? "|" : "";
+				$subCatsId1 .= get_sub_cats($subCatsId).$slash_v;
+				}
+			$this->config['catId'] = $subCatsId1;
+			$this->config['catId'] = str_replace ( "|", ",", $this->config['catId'] );
+			}
 
-			if ($this->config['catId'] || $this->config['notCatId']) {
-				$ignore = ($this->config['notCatId']) ? 'NOT ' : '';
-				$catArr = ($this->config['notCatId']) ? $this->getDiapazone($this->config['notCatId']) : $this->getDiapazone($this->config['catId']);
-				$wheres[] = $ignore . 'category regexp "[[:<:]](' . str_replace(',', '|', $catArr) . ')[[:>:]]"';
+			if ($this->config['catId'] || $this->config['notCatId']) 
+			{
+				if($this->config['notCatId']) {
+					$catArrN = $this->getDiapazone($this->config['notCatId']);
+					$wheres[] = 'NOT category regexp "[[:<:]]('.str_replace(',', '|', $catArrN).')[[:>:]]"';	
+				}		
+						
+				if($this->config['catId']) {
+					$catArr = $this->getDiapazone($this->config['catId']);
+					$wheres[] = 'category regexp "[[:<:]]('.str_replace(',', '|', $catArr).')[[:>:]]"';	
+				}
 			}
 
 			// Фильтрация НОВОСТЕЙ по их ID
@@ -941,8 +963,10 @@ $BlockProConfig = array(
 	'catId'        => !empty($catId) ? $catId : '',                             
 
 	// Игнорируемые категории (через запятую)
-	'notCatId'     => !empty($notCatId) ? $notCatId : '',                       
-
+	'notCatId'     => !empty($notCatId) ? $notCatId : '',   
+	
+	// Вывод из СУБКАТЕГОРИЙ (y)
+	'subCats' => !empty($subCats)?$subCats: '',
 
 	// Теги для показа	(через запятую)
 	'tags'         => !empty($tags) ? $tags : '',                               
