@@ -1,7 +1,7 @@
 <?php
 /*
 =============================================================================
-BlockPro 3 - Модуль для вывода блоков с новостями на страницах сайта DLE (тестировался на 9.6-10.0)
+BlockPro 3 - Модуль для вывода блоков с новостями на страницах сайта DLE (тестировался на 9.6-10.2)
 =============================================================================
 Автор модуля: ПафНутиЙ 
 URL: http://blockpro.ru/
@@ -20,7 +20,7 @@ email: elhan.isaev@gmail.com
 =============================================================================
 Файл:  block.pro.3.php
 -----------------------------------------------------------------------------
-Версия: 3.3.5.0 (08.07.2013)
+Версия: 3.3.5.1 (07.04.2014)
 =============================================================================
 */ 
 
@@ -363,7 +363,7 @@ if(!class_exists('BlockPro')) {
 							$my_cat_icon[] = '<img class="bp-cat-icon" src="'.$cat_info[$element]['icon'].'" alt="'.$cat_info[$element]['name'].'" />';
 						else
 							$my_cat_icon[] = '<img class="bp-cat-icon" src="{THEME}/blockpro/'.$this->config['noicon'].'" alt="'.$cat_info[$element]['name'].'" />';
-						if($this->dle_config['allow_alt_url'] == 'yes') 
+						if($this->dle_config['allow_alt_url'] && $this->dle_config['allow_alt_url'] != 'no') 
 							$my_cat_link[] = '<a href="'.$this->dle_config['http_home_url'].get_url($element).'/">'.$cat_info[$element]['name'].'</a>';
 						else 
 							$my_cat_link[] = '<a href="'.$PHP_SELF.'?do=cat&category='.$cat_info[$element]['alt_name'].'">'.$cat_info[$element]['name'].'</a>';
@@ -372,7 +372,7 @@ if(!class_exists('BlockPro')) {
 				$categoryUrl = ($newsItem['category']) ? $this->dle_config['http_home_url'] . get_url(intval($newsItem['category'])) . '/' : '/' ;
 
 				// Ссылка на профиль  юзера
-				if($this->dle_config['allow_alt_url'] == 'yes') {
+				if($this->dle_config['allow_alt_url'] && $this->dle_config['allow_alt_url'] != 'no') {
 					$go_page = $this->dle_config['http_home_url'].'user/'.urlencode($newsItem['autor']).'/';
 				} else {
 					$go_page = $PHP_SELF.'?subaction=userinfo&amp;user='.urlencode($newsItem['autor']);
@@ -424,7 +424,7 @@ if(!class_exists('BlockPro')) {
 
 					foreach ($newsItem['tags'] as $value) {				
 						$value = trim($value);										
-						if($this->dle_config['allow_alt_url'] == "yes") 
+						if($this->dle_config['allow_alt_url'] && $this->dle_config['allow_alt_url'] != 'no') 
 							$showTagsArr[] = "<a href=\"".$this->dle_config['http_home_url']."tags/".urlencode($value)."/\">".$value."</a>";
 						else 
 							$showTagsArr[] = "<a href=\"$PHP_SELF?do=tags&amp;tag=".urlencode($value)."\">".$value."</a>";
@@ -725,7 +725,7 @@ if(!class_exists('BlockPro')) {
 		 */
 		public function getPostUrl($post, $postDate)
 		{		
-			if($this->dle_config['allow_alt_url'] == 'yes')
+			if($this->dle_config['allow_alt_url'] && $this->dle_config['allow_alt_url'] != 'no')
 			{
 				if(
 					($this->dle_config['version_id'] < 9.6 && $this->dle_config['seo_type'])
@@ -870,7 +870,7 @@ if(!class_exists('BlockPro')) {
 							$value2 = trim($value2);
 							$value2 = str_replace("&#039;", "'", $value2);
 
-							if($config['allow_alt_url'] == "yes") $value3[] = "<a href=\"" . $this->dle_config['http_home_url'] . "xfsearch/" . urlencode($value2) . "/\">" . $value2 . "</a>";
+							if($config['allow_alt_url'] && $config['allow_alt_url'] != 'no') $value3[] = "<a href=\"" . $this->dle_config['http_home_url'] . "xfsearch/" . urlencode($value2) . "/\">" . $value2 . "</a>";
 							else $value3[] = "<a href=\"$PHP_SELF?do=xfsearch&amp;xf=" . urlencode($value2) . "\">" . $value2 . "</a>";
 						}
 
