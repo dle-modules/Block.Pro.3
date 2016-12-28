@@ -121,29 +121,43 @@ if(!class_exists('BlockPro')) {
 			if ($this->config['notTags'] == 'this') $cache_suffix .= $_REQUEST["tag"].'nT_';
 			if ($this->config['related'] == 'this') $cache_suffix .= $_REQUEST["newsid"].'r_';
 
+			//  кеширование включено
+			if (!$this->config['nocache']) {
+				
+				// если используется memcache
+				if ($mcache) {
+					$output = dle_cache($this->config['prefix'] . 'bp_' . md5($cache_suffix . implode('_', $this->config)));
+				
+				} else { // файловый кеш
+					
+					// Если установлено время жизи кеша - убираем префикс news_ чтобы кеш не чистился автомато
+					// и задаём настройки времени жизни кеша в секундах
+					if ($this->config['cacheLive']) {
+						$this->config['prefix'] = '';
 
-			// Если установлено время жизи кеша - убираем префикс news_ чтобы кеш не чистился автоматом
-			// и задаём настройки времени жизни кеша в секундах
-			if ($this->config['cacheLive']) 
-			{
-				$this->config['prefix'] = ''; 
+						$filedate = ENGINE_DIR . '/cache/' . $this->config['prefix'] . 'bp_' . md5($cache_suffix . implode('_', $this->config)) . '.tmp';
 
-				$filedate = ENGINE_DIR.'/cache/'.$this->config['prefix'].'bp_'.md5($cache_suffix.implode('_', $this->config)).'.tmp';
+						if (@file_exists($filedate)) {
+							$cache_time = time() - @filemtime($filedate);
+						} else {
+							$cache_time = $this->config['cacheLive'] * 60;
+						}
 
-				if(@file_exists($filedate)) $cache_time=time()-@filemtime ($filedate);
-				else $cache_time = $this->config['cacheLive']*60;	
-				if ($cache_time>=$this->config['cacheLive']*60) $clear_time_cache = 1;
-			}
+						if ($cache_time >= $this->config['cacheLive'] * 60) {
+							$clear_time_cache = 1;
+						}
+					}
 
-			// Если nocache не установлен - добавляем префикс (по умолчанию news_) к файлу кеша. 
-			if(!$this->config['nocache'])
-			{
-				$output = dle_cache($this->config['prefix'].'bp_'.md5($cache_suffix.implode('_', $this->config)));
-			}
-			if ($clear_time_cache) 
-			{
-				$output = false;
-			}
+					// Если nocache не установлен - добавляем префикс (по умолчанию news_) к файлу кеша.
+					if (!$clear_time_cache) {
+						$output = dle_cache($this->config['prefix'] . 'bp_' . md5($cache_suffix . implode('_', $this->config)));
+					}
+
+					if ($clear_time_cache) {
+						$output = false;
+					}
+				}
+			 }
 			
 			// Если значение кэша для данной конфигурации получено, выводим содержимое кэша
 			if($output !== false)
